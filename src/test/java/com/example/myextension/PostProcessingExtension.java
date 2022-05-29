@@ -14,7 +14,7 @@ public class PostProcessingExtension implements TestInstancePostProcessor {
         Field[] declaredFields = testInstance.getClass().getDeclaredFields();
         for (Field declaredField : declaredFields) {
             if (declaredField.isAnnotationPresent(Autowired.class)) {
-                declaredField.set(testInstance, new UserService());
+                declaredField.set(testInstance, new UserService(null));
                 //Spring works in this way - it looks at runtime annotation and makes something with this field
             }
         }

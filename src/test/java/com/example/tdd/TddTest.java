@@ -2,8 +2,7 @@ package com.example.tdd;
 
 import com.example.TestBase;
 import com.example.myextension.MyConditionalExtension;
-import com.example.myextension.ThrowableExtension;
-import org.junit.jupiter.api.Test;
+import com.example.tddmain.dao.UserDao;
 import com.example.tddmain.model.User;
 import com.example.tddmain.service.UserService;
 import org.junit.jupiter.api.*;
@@ -24,18 +23,19 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.RepeatedTest.SHORT_DISPLAY_NAME;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@ContextConfiguration(classes = {UserService.class})
+@ContextConfiguration(classes = {UserService.class, UserDao.class})
 @SpringBootTest
 //@ExtendWith(MyGlobalExtension.class) is in TestBase class
-@ExtendWith({
-        MyConditionalExtension.class,
+@ExtendWith({MyConditionalExtension.class,
 //        PostProcessingExtension.class,
-        ThrowableExtension.class})
+//        ThrowableExtension.class
+})
 class TddTest extends TestBase {
 
     private static final User IVAN = User.of(1L, "Ivan", 19, "123");
@@ -46,7 +46,7 @@ class TddTest extends TestBase {
 
     @BeforeEach
     void init() {
-        userService = new UserService();
+        userService = new UserService(null);
     }
 
     @Test
@@ -68,7 +68,8 @@ class TddTest extends TestBase {
 
     @Test
     void throwExceptionIfUserNameOrPasswordIsNull() {
-        assertAll(() -> assertThrows(IllegalArgumentException.class, () -> userService.login("name", null)), () -> assertThrows(IllegalArgumentException.class, () -> userService.login(null, "123")));
+        assertAll(() -> assertThrows(IllegalArgumentException.class, () -> userService.login("name", null)),
+                  () -> assertThrows(IllegalArgumentException.class, () -> userService.login(null, "123")));
     }
 
     @Test
@@ -80,7 +81,8 @@ class TddTest extends TestBase {
     void usersConvertedToMapById() {
         userService.add(IVAN, PETR);
         Map<Long, User> users = userService.getAllConvertedById();
-        assertAll(() -> assertThat(users).containsKeys(IVAN.getId(), PETR.getId()), () -> assertThat(users).containsValues(IVAN, PETR));
+        assertAll(() -> assertThat(users).containsKeys(IVAN.getId(), PETR.getId()),
+                  () -> assertThat(users).containsValues(IVAN, PETR));
     }
 
     @Nested
@@ -113,7 +115,8 @@ class TddTest extends TestBase {
         @Test
         void checkLoginFunctionalityPerformance() {
             userService.add(IVAN);
-            Optional<User> user = assertTimeout(Duration.ofMillis(200L), () -> userService.login(IVAN.getName(), IVAN.getPassword()));
+            Optional<User> user = assertTimeout(Duration.ofMillis(200L), () -> userService.login(IVAN.getName(),
+                                                                                                 IVAN.getPassword()));
             assertThat(user).isPresent().isEqualTo(Optional.of(IVAN));
         }
 
@@ -142,8 +145,10 @@ class TddTest extends TestBase {
         }
 
         static Stream<Arguments> getArgumentsForLoginTest() {
-            return Stream.of(Arguments.of("Ivan", "123", Optional.of(IVAN)), Arguments.of("Petr", "111", Optional.of(PETR)), Arguments.of("Petr", "wrong", Optional.empty()), Arguments.of("wrong", "123", Optional.empty()));
-
+            return Stream.of(Arguments.of("Ivan", "123", Optional.of(IVAN)),
+                             Arguments.of("Petr", "111", Optional.of(PETR)),
+                             Arguments.of("Petr", "wrong", Optional.empty()),
+                             Arguments.of("wrong", "123", Optional.empty()));
         }
     }
 

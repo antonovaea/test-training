@@ -1,6 +1,8 @@
 package com.example.tddmain.service;
 
+import com.example.tddmain.dao.UserDao;
 import com.example.tddmain.model.User;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 
@@ -12,9 +14,19 @@ import java.util.stream.Collectors;
 public class UserService implements UserServiceApi {
 
     List<User> users = new ArrayList<>();
+    private final UserDao userDao;
+
+    @Autowired
+    public UserService(UserDao userDao) {
+        this.userDao = userDao;
+    }
 
     public void add(User... users) {
         this.users.addAll(Arrays.asList(users));
+    }
+
+    public boolean deleteUser(Long userId) {
+        return userDao.delete(userId);
     }
 
     public List<User> getAll() {
